@@ -39,7 +39,7 @@ POST http://127.0.0.1:8000/users/create/
 ```
 ```
 {
-    "email": "your_email@example.com",
+    "email": "your_email@mail.ru",
     "password": "your_password"
 }
 ```
@@ -49,7 +49,7 @@ POST http://127.0.0.1:8000/users/token/
 ```
 ```
 {
-    "username": "your_username",
+    "email": "your_email@mail.ru",
     "password": "your_password"
 }
 ```
