@@ -8,8 +8,9 @@ NULLABLE = {'blank': True, 'null': True}
 
 # Create your models here.
 class CustomUserManager(BaseUserManager):
+    '''Метод для создания пользователя'''
     def _create_user(self, email, password=None, **extra_fields):
-        if not email:
+        if not email: # Проверяем, что поле email не пустое
             raise ValueError('The Email field must be set')
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
@@ -29,18 +30,12 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault('is_active', True)
         return self._create_user(email, password, **extra_fields)
 
-
-class UserRoles(models.TextChoices):
-    MEMBER = 'member', _('member')
-    MODERATOR = 'moderator', _('moderator')
-
-
 class User(AbstractUser):
-    username = None
+    username = models.TextField(verbose_name='Имя пользователя', **NULLABLE)
     email = models.EmailField(unique=True, verbose_name='Почта')
     phone = models.CharField(max_length=35, verbose_name='Телефон', **NULLABLE)
     avatar = models.ImageField(upload_to='users/', verbose_name='Аватар', **NULLABLE)
 
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD = 'email' # Поле, используемое для входа в систему
     objects = CustomUserManager()
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = []  # Список обязательных полей для создания пользователя

@@ -37,16 +37,11 @@ class AddToShoppingCartSerializer(serializers.Serializer):
     quantity = serializers.IntegerField(default=1)
 
     def create(self, validated_data):
-        # Получить идентификатор продукта из проверенных данных
+        '''Создание корзины и сохранение её'''
         product_id = validated_data.get('product_id').id
+        user = self.context['request'].user  # Запрос пользователя из контекста запроса
+        quantity = validated_data.get('quantity')  # Получить количество продуктов из проверенных данных
 
-        # Получить пользователя из контекста запроса
-        user = self.context['request'].user
-
-        # Получить количество продуктов из проверенных данных
-        quantity = validated_data.get('quantity')
-
-        # Создать запись корзины с полученными данными
         shopping_cart_item = ShoppingCart.objects.create(
             user=user,
             product_id=product_id,
@@ -56,9 +51,8 @@ class AddToShoppingCartSerializer(serializers.Serializer):
         return shopping_cart_item
 
     def update(self, instance, validated_data):
+        '''Обновление данных в корзине по количеству'''
         new_quantity = validated_data.get('quantity')
-
-        # Обновить количество продуктов в корзине
         instance.quantity = new_quantity
         instance.save()
 

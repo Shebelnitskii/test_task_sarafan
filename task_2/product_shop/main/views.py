@@ -6,30 +6,36 @@ from .serializers import CategorySerializer, SubCategorySerializer, ProductSeria
 from .pagination import CategoryPagination, SubCategoryPagination, ProductPagination
 from rest_framework.permissions import IsAuthenticated
 
+
 class CategoryListView(generics.ListAPIView):
+    '''Просмотр списка категорий'''
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     pagination_class = CategoryPagination
 
 
 class SubCategoryListView(generics.ListAPIView):
+    '''Просмотр списка подкатегорий'''
     queryset = SubCategory.objects.all()
     serializer_class = SubCategorySerializer
     pagination_class = SubCategoryPagination
 
 
 class ProductListView(generics.ListAPIView):
+    '''Просмотр списка продуктов'''
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     pagination_class = ProductPagination
 
 
 class AddToShoppingCartView(generics.CreateAPIView):
+    '''Добавление товаров в корзину по id товара'''
     queryset = ShoppingCart.objects.all()
     serializer_class = AddToShoppingCartSerializer
 
 
 class UpdateShoppingCartItemView(generics.UpdateAPIView):
+    '''Обновление кол-ва товара в корзине по id товара в корзине'''
     queryset = ShoppingCart.objects.all()
     serializer_class = AddToShoppingCartSerializer
     lookup_url_kwarg = 'pk'
@@ -43,15 +49,25 @@ class UpdateShoppingCartItemView(generics.UpdateAPIView):
 
 
 class RemoveFromShoppingCartView(generics.DestroyAPIView):
+    '''Удаление товара в корзине по id товара в корзине'''
     queryset = ShoppingCart.objects.all()
     lookup_url_kwarg = 'pk'
 
 
 class ViewShoppingCart(generics.ListAPIView):
+    '''Просмотр корзины пользователя'''
     queryset = ShoppingCart.objects.all()
     serializer_class = ShoppingCartSerializer
 
+    def get_queryset(self):
+        '''Вывод информации о корзине того пользователя, который сделал запрос'''
+        user = self.request.user
+        # Фильтруем корзину по пользователю
+        queryset = ShoppingCart.objects.filter(user=user)
+        return queryset
+
     def list(self, request, *args, **kwargs):
+        '''Подсчёт суммы корзины и кол-ва товаров'''
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         total_items = sum(item.quantity for item in queryset)
@@ -65,6 +81,7 @@ class ViewShoppingCart(generics.ListAPIView):
 
 
 class ClearShoppingCartView(generics.DestroyAPIView):
+    '''Очистка корзины пользователя'''
     queryset = ShoppingCart.objects.all()
     permission_classes = [IsAuthenticated]
 
