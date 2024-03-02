@@ -36,9 +36,16 @@ class Product(models.Model):
 
 
 class ShoppingCart(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, **NULLABLE, verbose_name='Покупатель')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Покупатель')
+    products = models.ManyToManyField(Product, through='ShoppingCartItem', related_name='shopping_carts')
+
+    def __str__(self):
+        return f"Корзина заказов {self.user}"
+
+class ShoppingCartItem(models.Model):
+    cart = models.ForeignKey(ShoppingCart, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)
 
     def __str__(self):
-        return f"Корзина заказов {self.user}"
+        return f"{self.quantity} x {self.product.name}"
