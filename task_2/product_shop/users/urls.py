@@ -2,7 +2,7 @@ from rest_framework_simplejwt.views import (TokenObtainPairView, TokenRefreshVie
 from django.urls import path
 
 from users.apps import UsersConfig
-from .views import CreateUserView
+from users.views import CreateUserView
 
 app_name = UsersConfig.name
 

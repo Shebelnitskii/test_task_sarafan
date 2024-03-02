@@ -1,11 +1,11 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
-from .models import Category, SubCategory, Product, ShoppingCart
-from .serializers import CategorySerializer, SubCategorySerializer, ProductSerializer, ShoppingCartSerializer, \
-    AddToShoppingCartSerializer
-from .pagination import CategoryPagination, SubCategoryPagination, ProductPagination
+from main.models import Category, SubCategory, Product, ShoppingCart, ShoppingCartItem
+from main.serializers import CategorySerializer, SubCategorySerializer, ProductSerializer, ShoppingCartSerializer, \
+    AddToShoppingCartSerializer, UpdateShoppingCartItemSerializer
+from main.pagination import CategoryPagination, SubCategoryPagination, ProductPagination
 from rest_framework.permissions import IsAuthenticated
-
+from django.shortcuts import get_object_or_404
 
 class CategoryListView(generics.ListAPIView):
     '''Просмотр списка категорий'''
@@ -28,65 +28,44 @@ class ProductListView(generics.ListAPIView):
     pagination_class = ProductPagination
 
 
-class AddToShoppingCartView(generics.CreateAPIView):
-    '''Добавление товаров в корзину по id товара'''
-    queryset = ShoppingCart.objects.all()
-    serializer_class = AddToShoppingCartSerializer
-
-
-class UpdateShoppingCartItemView(generics.UpdateAPIView):
-    '''Обновление кол-ва товара в корзине по id товара в корзине'''
-    queryset = ShoppingCart.objects.all()
-    serializer_class = AddToShoppingCartSerializer
-    lookup_url_kwarg = 'pk'
-
-    def partial_update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(serializer.data)
-
-
-class RemoveFromShoppingCartView(generics.DestroyAPIView):
-    '''Удаление товара в корзине по id товара в корзине'''
-    queryset = ShoppingCart.objects.all()
-    lookup_url_kwarg = 'pk'
-
-
 class ViewShoppingCart(generics.ListAPIView):
     '''Просмотр корзины пользователя'''
     queryset = ShoppingCart.objects.all()
     serializer_class = ShoppingCartSerializer
 
-    def get_queryset(self):
-        '''Вывод информации о корзине того пользователя, который сделал запрос'''
-        user = self.request.user
-        # Фильтруем корзину по пользователю
-        queryset = ShoppingCart.objects.filter(user=user)
-        return queryset
 
-    def list(self, request, *args, **kwargs):
-        '''Подсчёт суммы корзины и кол-ва товаров'''
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        total_items = sum(item.quantity for item in queryset)
-        total_cost = sum(item.product.price * item.quantity for item in queryset)
-        response_data = {
-            'cart_items': serializer.data,
-            'total_items': total_items,
-            'total_cost': total_cost
-        }
-        return Response(response_data)
+class AddToShoppingCartView(generics.CreateAPIView):
+    '''Добавление товаров в корзину по id товара'''
+    queryset = ShoppingCartItem.objects.all()
+    serializer_class = AddToShoppingCartSerializer
+
+
+class UpdateShoppingCartItemView(generics.UpdateAPIView):
+    queryset = ShoppingCartItem.objects.all()
+    serializer_class = UpdateShoppingCartItemSerializer
+    lookup_url_kwarg = 'pk'
+
+    def perform_update(self, serializer):
+        '''Выполнение обновления'''
+        instance = serializer.save()
+        if instance.quantity < 0:
+            raise ValidationError("Количество товара не может быть отрицательным.")
+
+
+class RemoveFromShoppingCartView(generics.DestroyAPIView):
+    '''Удаление товара в корзине по id товара в корзине'''
+    queryset = ShoppingCartItem.objects.all()
+    lookup_url_kwarg = 'pk'
 
 
 class ClearShoppingCartView(generics.DestroyAPIView):
     '''Очистка корзины пользователя'''
-    queryset = ShoppingCart.objects.all()
+    queryset = ShoppingCartItem.objects.all()
     permission_classes = [IsAuthenticated]
 
+
     def delete(self, request, *args, **kwargs):
-        user = request.user
-        queryset = self.get_queryset().filter(user=user)
+        '''Очистка корзины польщователя, который отправил запрос'''
+        queryset = self.get_queryset()
         queryset.delete()
-        return self.destroy(request, *args, **kwargs)
+        return Response(status=status.HTTP_204_NO_CONTENT)
