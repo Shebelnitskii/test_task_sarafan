@@ -7,6 +7,7 @@ from main.pagination import CategoryPagination, SubCategoryPagination, ProductPa
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 
+
 class CategoryListView(generics.ListAPIView):
     '''Просмотр списка категорий'''
     queryset = Category.objects.all()
@@ -32,6 +33,9 @@ class ViewShoppingCart(generics.ListAPIView):
     '''Просмотр корзины пользователя'''
     queryset = ShoppingCart.objects.all()
     serializer_class = ShoppingCartSerializer
+
+    def get_queryset(self):
+        return ShoppingCart.objects.filter(user=self.request.user)
 
 
 class AddToShoppingCartView(generics.CreateAPIView):
@@ -63,9 +67,9 @@ class ClearShoppingCartView(generics.DestroyAPIView):
     queryset = ShoppingCartItem.objects.all()
     permission_classes = [IsAuthenticated]
 
-
     def delete(self, request, *args, **kwargs):
-        '''Очистка корзины польщователя, который отправил запрос'''
-        queryset = self.get_queryset()
-        queryset.delete()
+        '''Очистка корзины пользователя, который отправил запрос'''
+        user = request.user
+        user_shopping_cart_items = ShoppingCartItem.objects.filter(shopping_cart__user=user)
+        user_shopping_cart_items.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
